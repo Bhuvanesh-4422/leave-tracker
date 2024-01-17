@@ -1,0 +1,66 @@
+service: my-serverless-project
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: us-east-1
+
+functions:
+  hasuraActionHandler:
+    handler: handler.handler
+    events:
+      - http:
+          path: /action
+          method: get
+
+  eventTriggers:
+    handler: handler.eventHandler
+    events:
+      - http:
+          path: /triggers
+          method: post
+
+  useridHandler:
+    handler: handler.useridHandler
+    events:
+      - http:
+          path: /userid
+          method: post
+
+  DeleteUserHandler:
+    handler: handler.deleteUserHandler
+    events:
+      - http:
+          path: /Deleteuser
+          method: post
+
+  NewUserHandler:
+    handler: handler.NewUserHandler
+    events:
+      - http:
+          path: /NewUser
+          method: post
+
+  test:
+    handler: handler.test
+    events:
+      - http:
+          path: /test
+          method: post
+
+  newPost:
+    handler: handler.postEvents
+    events:
+      - http:
+          path: /newPost
+          method: post
+
+  updatePost:
+    handler: handler.updateEvent
+    events:
+      - http:
+          path: /updatePost
+          method: post
+
+plugins:
+  - serverless-offline
