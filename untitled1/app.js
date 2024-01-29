@@ -1,6 +1,8 @@
 import pkg from '@slack/bolt';
 import dotenv from 'dotenv';
-import {prepareLeaveDetails , prepareLeaveDays} from "./index.js";
+import inputData from "./inputData.js";
+import getEmployeeDetails from "./searchForEmployee.js";
+import getUserReportByEmail from "./getAllLeaveDetails.js";
 
 dotenv.config();
 const { App } = pkg;
@@ -9,20 +11,6 @@ const app = new App({
     signingSecret: process.env.SLACK_SIGING_SECRET,
 });
 const leaves_format={'email':null,'leave_type':null,'from_date':null,'to_date':null,'days':null}
-const leaveDetails = {
-    employee_name: "pranav N",
-    leave_types: [
-        {
-            unit: "Day",
-            taken: 0,
-            leave_type_name: "Bereavement leave",
-            available: 0,
-            type: "PAID",
-            leave_type_id: 790031000000254578,
-        },
-    ],
-    employee_id: "1",
-};
 
 async function get_user_info(user_id) {
     try {
@@ -37,12 +25,14 @@ async function get_user_info(user_id) {
 }
 
 async function send_leave_details(user_id) {
-    const email = get_user_info(user_id);
-    const { employee_name, leave_types } = leaveDetails;
+    const email = await get_user_info(user_id);
+    const leave_details = await getUserReportByEmail(email)
 
-    let message = `Leave details for ${employee_name}:\n`;
-    leave_types.forEach((leave_type) => {
-        message += `\n${leave_type.leave_type_name}:\n  - Available: ${leave_type.available}\n  - Taken: ${leave_type.taken}\n`;
+    const { employeeName, leavetypes } = leave_details;
+
+    let message = `Leave details for ${employeeName}:\n`;
+    leavetypes.forEach((leave_type) => {
+        message += `\n${leave_type.leavetypeName}:\n  - Available: ${leave_type.available}\n  - Taken: ${leave_type.taken}\n`;
     });
 
     try {
@@ -59,15 +49,13 @@ async function send_leave_details(user_id) {
 // Function to generate an array of dates between two given dates
 app.command('/leave_details', async ({ ack, body }) => {
     await ack();
-    console.log(body);
-    send_leave_details(body.user_id);
+    await send_leave_details(body.user_id);
 });
 
 app.command('/apply_leave', async ({ ack, body, client }) => {
     await ack();
 
     try {
-        // Open a modal with two datepickers for "from" and "to" dates
         const open_result = await client.views.open({
             trigger_id: body.trigger_id,
             view: {
@@ -146,6 +134,13 @@ app.command('/apply_leave', async ({ ack, body, client }) => {
                                     },
                                     value: '790031000000247072',
                                 },
+                                {
+                                    text: {
+                                        type: 'plain_text',
+                                        text: 'Vacation',
+                                    },
+                                    value: '790031000000247060',
+                                },
                             ],
                         },
                     },
@@ -166,21 +161,18 @@ app.view('apply_leave_modal', async ({ ack, body, view, client }) => {
     try {
         // Acknowledge the view submission
         await ack();
+
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Extract the selected dates from the submitted view
         const from_date = new Date(view.state.values.from_date_section.from_date.selected_date);
         const to_date = new Date(view.state.values.to_date_section.to_date.selected_date);
         const leave_type = view.state.values.leave_type_section.leave_type.selected_option.value;
-        const email = get_user_info(body.user.id);
-        leaves_format.email=email
+        const email = await get_user_info(body.user.id);
+        leaves_format.email=await getEmployeeDetails(email)
         leaves_format.leave_type=leave_type
         leaves_format.to_date=to_date
         leaves_format.from_date=from_date
 
-        // Define a constant to store option values for each day
-        prepareLeaveDetails(email,leave_type,from_date,to_date)
-        //prepareLeaveDetails(email,leave_type,from_date,to_date)
         const leave_options_by_date = {};
         const blocks = [
             {
@@ -246,7 +238,7 @@ app.view('apply_leave_modal', async ({ ack, body, view, client }) => {
             trigger_id: body.trigger_id,
             view: {
                 type: 'modal',
-                callback_id: 'apply_leave_modal',
+                callback_id: 'action',
                 title: {
                     type: 'plain_text',
                     text: 'Leave Details',
@@ -264,7 +256,7 @@ app.view('apply_leave_modal', async ({ ack, body, view, client }) => {
     }
 });
 
-// Listen for block actions (selections from static select menus)
+const dayss={'options':[]}
 app.action(/leave_option_select_.*/, async ({ ack, body, action, client }) => {
     await ack();
 
@@ -275,10 +267,17 @@ app.action(/leave_option_select_.*/, async ({ ack, body, action, client }) => {
         selected_option: selected_option
     };
     console.log(dateAndOption);
-    leaves_format.days=dateAndOption
-    console.log(leaves_format)
+    dayss.options.push(dateAndOption)
 
+    // console.log(dayss)
+    leaves_format.days=dayss
+    await inputData(leaves_format)
 });
+
+app.action(/action/, async ({ ack, body, action, client }) => {
+    await ack();
+    console.log('action triggered')
+})
 
 app.start(3000).then(() => {
     console.log('⚡️ Bolt app is running!');
