@@ -26,8 +26,7 @@ async function getEmployeeDetails(emp_email_id) {
         });
         const result=response.data.response.result[0]
         const first_key=Object.keys(result)
-        console.log(first_key[0].toString())
-        return  first_key[0].toString()
+        return  first_key[0]
 
     } catch (error) {
         console.error('Error:', error.message,"this,,,");
