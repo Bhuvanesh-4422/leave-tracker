@@ -12,6 +12,7 @@ const app = new App({
 });
 const leaves_format={'email':null,'leave_type':null,'from_date':null,'to_date':null,'days':null}
 
+
 async function get_user_info(user_id) {
     try {
         const user_info = await app.client.users.info({ user: user_id });
@@ -49,6 +50,7 @@ async function send_leave_details(user_id) {
 // Function to generate an array of dates between two given dates
 app.command('/leave_details', async ({ ack, body }) => {
     await ack();
+
     await send_leave_details(body.user_id);
 });
 
@@ -276,17 +278,53 @@ app.action(/leave_option_select_.*/, async ({ ack, body, action, client }) => {
 
 });
 
-app.view('action', async ({ ack, body, view, client }) => {
+app.view('action', async ({ ack, body, view, client, payload }) => {
     try {
         // Acknowledge the view submission
         await ack();
+        console.log(payload)
 
-        await inputData(leaves_format)
-    } catch (error) {
-        console.error('Error handling view submission:', error);
-    }
+        // Get the channel ID from the original trigger
+
+
+        // Get the response from inputData function
+        const response = await inputData(leaves_format);
+
+
+        // Publish the response in the same channel as the original message
+        const messageBlocks = [
+            {
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: `*Response:* ${await response}`
+                }
+            }
+            // Add more blocks if needed
+        ];
+
+        // Open a new view with the response message
+        await client.views.open({
+            trigger_id: body.trigger_id,
+            view: {
+                type: 'modal',
+                callback_id: 'response_modal',
+                title: {
+                    type: 'plain_text',
+                    text: 'Response',
+                },
+                blocks: messageBlocks,
+                close: {
+                    type: 'plain_text',
+                    text: 'Close',
+                },
+            },
+        });
+
+} catch (error) {
+    console.error('Error handling view submission:', error);
+}
 });
-
 app.start(3000).then(() => {
     console.log('⚡️ Bolt app is running!');
 });
