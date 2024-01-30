@@ -15,7 +15,7 @@ async function inputData(leave_format) {
     }
 
     console.log(leave_obj);
-    await applyLeave(leave_obj);
+    return await applyLeave(leave_obj);
 }
 
 export default inputData;

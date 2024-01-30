@@ -3,7 +3,6 @@ import dotenv from 'dotenv';
 import {send_leave_details} from "./handlers/leaveHandlers.js";
 import{handle_apply_leave_modal,handle_leave_option_select,handle_apply_leave,handle_response_modal} from "./handlers/applyLeaveHandlers.js";
 
-
 dotenv.config();
 const { App } = pkg;
 const app = new App({
@@ -11,8 +10,6 @@ const app = new App({
     signingSecret: process.env.SLACK_SIGING_SECRET,
 });
 
-
-// Command handling
 app.command('/leave_details', async ({ ack, body }) => {
     await ack();
     await send_leave_details(app, body.user_id);
