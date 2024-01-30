@@ -1,21 +1,12 @@
 import axios from 'axios';
-import Ioredis from 'ioredis';
-import {refresh_token_forms} from "./accessToken.js"
-
-const redis = new Ioredis();
-
-
-await refresh_token_forms();
-
+import {form_token} from "./tokens.js";
 async function getEmployeeDetails(emp_email_id) {
     try {
-
-        const token = await redis.get('access_token_key_forms');
         const apiUrl = 'https://people.zoho.com/api/forms/employee/getRecords';
         const searchColumn = 'EMPLOYEEMAILALIAS';
         const searchValue = emp_email_id;
         const headers = {
-            Authorization: `Zoho-oauthtoken ${token}`,
+            Authorization: `Zoho-oauthtoken ${form_token}`,
         };
         const response = await axios.get(apiUrl, {
             headers,

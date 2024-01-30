@@ -1,4 +1,4 @@
-import applyLeave from "./applyLeave.js";
+import applyLeave from "./functions/src/handlers/applyLeave.js";
 
 const leave_count_mapping={'Full_day':{'value':1},'First_Half':{'value':0.5,'session':1},'Second_Half':{'value':0.5,'session':2}}
 function formatDateString(rawDate) {

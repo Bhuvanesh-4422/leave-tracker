@@ -1,4 +1,3 @@
-
 import Ioredis from 'ioredis';
 
 const redis = new Ioredis();
@@ -11,4 +10,12 @@ const disconnectFromRedis = () => {
     redis.disconnect();
 };
 
-export { connectToRedis, disconnectFromRedis };
+const getAccessToken = async (key) => {
+    return redis.get(key);
+};
+
+const setAccessToken = async (key, value, expiration) => {
+    await redis.set(key, value, 'EX', expiration);
+};
+
+export { connectToRedis, disconnectFromRedis, getAccessToken, setAccessToken };

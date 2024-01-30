@@ -1,8 +1,8 @@
 import pkg from '@slack/bolt';
 import dotenv from 'dotenv';
 import inputData from "./inputData.js";
-import getEmployeeDetails from "./searchForEmployee.js";
-import getUserReportByEmail from "./getAllLeaveDetails.js";
+import getEmployeeDetails from "./functions/src/handlers/searchForEmployee.js";
+import getUserReportByEmail from "./functions/src/handlers/getAllLeaveDetails.js";
 
 dotenv.config();
 const { App } = pkg;
