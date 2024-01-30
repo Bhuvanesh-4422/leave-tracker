@@ -2,7 +2,6 @@ import axios from "axios";
 import {form_token} from "./tokens.js";
 async function applyLeave(input_data) {
     try {
-
         const base_url = 'https://people.zoho.com/people/api/forms/json/leave/insertRecord';
         const zoho_token = `Zoho-oauthtoken ${form_token}`;
         const constructUrl = () => {
@@ -16,8 +15,11 @@ async function applyLeave(input_data) {
         const url = constructUrl();
         const response = await axios.post(url, {}, { headers });
         const data = response.data;
-
-        console.log(data)
+        if (data.response.errors) {
+            return data.response.errors.message.From;
+        } else {
+            return data.response.message;
+        }
     } catch (error) {
         console.error('Error:', error.message);
     }

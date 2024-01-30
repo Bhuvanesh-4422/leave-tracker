@@ -1,59 +1,8 @@
-import pkg from '@slack/bolt';
-import dotenv from 'dotenv';
-import inputData from "./inputData.js";
-import getEmployeeDetails from "./functions/src/handlers/searchForEmployee.js";
-import getUserReportByEmail from "./functions/src/handlers/getAllLeaveDetails.js";
-
-dotenv.config();
-const { App } = pkg;
-const app = new App({
-    token: process.env.SLACK_BOT_TOKEN,
-    signingSecret: process.env.SLACK_SIGING_SECRET,
-});
-const leaves_format={'email':null,'leave_type':null,'from_date':null,'to_date':null,'days':null}
-
-async function get_user_info(user_id) {
-    try {
-        const user_info = await app.client.users.info({ user: user_id });
-        const user_email = user_info.user.profile.email;
-        console.log(user_email);
-        return user_email;
-    } catch (error) {
-        console.error('Error fetching user information:', error);
-        return null;
-    }
-}
-
-async function send_leave_details(user_id) {
-    const email = await get_user_info(user_id);
-    const leave_details = await getUserReportByEmail(email)
-
-    const { employeeName, leavetypes } = leave_details;
-
-    let message = `Leave details for ${employeeName}:\n`;
-    leavetypes.forEach((leave_type) => {
-        message += `\n${leave_type.leavetypeName}:\n  - Available: ${leave_type.available}\n  - Taken: ${leave_type.taken}\n`;
-    });
-
-    try {
-        await app.client.chat.postMessage({
-            token: process.env.SLACK_BOT_TOKEN,
-            channel: user_id,
-            text: message,
-        });
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-// Function to generate an array of dates between two given dates
-app.command('/leave_details', async ({ ack, body }) => {
-    await ack();
-    await send_leave_details(body.user_id);
-});
-
-app.command('/apply_leave', async ({ ack, body, client }) => {
-    await ack();
+import {get_user_info} from "../util/getSlackEmail.js";
+import {leaves_format} from "../config/leaveFormat.js";
+import inputData from "./formatedData.js";
+import getEmployeeDetails from "./searchForEmployee.js";
+export async function handle_apply_leave(app, ack, body, client) {
 
     try {
         const open_result = await client.views.open({
@@ -155,21 +104,24 @@ app.command('/apply_leave', async ({ ack, body, client }) => {
     } catch (error) {
         console.error('Error opening modal:', error);
     }
-});
+}
 
-app.view('apply_leave_modal', async ({ ack, body, view, client }) => {
+const dayss={'options':[]}
+export async function handle_apply_leave_modal(app, ack, body, view, client) {
     try {
         // Acknowledge the view submission
-        await ack();
 
         await new Promise(resolve => setTimeout(resolve, 1000));
+
         dayss.options = [];
 
         const from_date = new Date(view.state.values.from_date_section.from_date.selected_date);
         const to_date = new Date(view.state.values.to_date_section.to_date.selected_date);
         const leave_type = view.state.values.leave_type_section.leave_type.selected_option.value;
         const email = await get_user_info(body.user.id);
+        console.log(from_date,to_date,email,leave_type)
         leaves_format.email=await getEmployeeDetails(email)
+        // leaves_format.email=email
         leaves_format.leave_type=leave_type
         leaves_format.to_date=to_date
         leaves_format.from_date=from_date
@@ -255,12 +207,10 @@ app.view('apply_leave_modal', async ({ ack, body, view, client }) => {
     } catch (error) {
         console.error('Error handling view submission:', error);
     }
-});
+}
 
-const dayss={'options':[]}
+export async function handle_leave_option_select(app, ack, body, action, client) {
 
-app.action(/leave_option_select_.*/, async ({ ack, body, action, client }) => {
-    await ack();
 
     const date = action.action_id.replace('leave_option_select_', '');
     const selected_option = action.selected_option.value;
@@ -268,25 +218,48 @@ app.action(/leave_option_select_.*/, async ({ ack, body, action, client }) => {
         date: date,
         selected_option: selected_option
     };
-    console.log(dateAndOption);
-    dayss.options.push(dateAndOption)
 
-    // console.log(dayss)
+    console.log(dateAndOption,"jjjjjj");
+    dayss.options.push(dateAndOption);
     leaves_format.days=dayss
+    console.log(leaves_format)
+}
 
-});
-
-app.view('action', async ({ ack, body, view, client }) => {
+export async function handle_response_modal(ack, body, client) {
     try {
-        // Acknowledge the view submission
-        await ack();
 
-        await inputData(leaves_format)
+        const response = await inputData(leaves_format);
+
+        const messageBlocks = [
+            {
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: `*Response:* ${await response}`
+                }
+            }
+            // Add more blocks if needed
+        ];
+
+        // Open a new view with the response message
+        await client.views.open({
+            trigger_id: body.trigger_id,
+            view: {
+                type: 'modal',
+                callback_id: 'response_modal',
+                title: {
+                    type: 'plain_text',
+                    text: 'Response',
+                },
+                blocks: messageBlocks,
+                close: {
+                    type: 'plain_text',
+                    text: 'Close',
+                },
+            },
+        });
+
     } catch (error) {
         console.error('Error handling view submission:', error);
     }
-});
-
-app.start(3000).then(() => {
-    console.log('⚡️ Bolt app is running!');
-});
+}
