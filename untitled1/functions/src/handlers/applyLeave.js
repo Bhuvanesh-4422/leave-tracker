@@ -1,4 +1,3 @@
-import Ioredis from "ioredis";
 import axios from "axios";
 import {form_token} from "./tokens.js";
 async function applyLeave(input_data) {

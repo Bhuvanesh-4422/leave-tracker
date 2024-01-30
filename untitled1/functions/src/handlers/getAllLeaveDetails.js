@@ -16,7 +16,4 @@ async function getUserReport(empId) {
     }
 }
 
-
-
-
 export default getUserReport ;
