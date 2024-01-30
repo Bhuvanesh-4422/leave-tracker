@@ -45,15 +45,15 @@ async function inputData(leave_format) {
             'days': daysObject
         };
         leave_obj=input_data;
-        console.log(leave_obj)
-        console.log(input_data)
+        console.log(leave_obj,'h')
+        console.log(input_data,'l')
 
     } catch (error) {
         console.error('Error:', error);
         throw error;
     }
-    console.log(leave_obj)
-    await applyLeave(leave_obj);
+    const response=await applyLeave(leave_obj);
+    return response ;
 }
 
 
