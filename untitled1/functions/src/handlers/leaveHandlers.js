@@ -2,7 +2,6 @@ import getUserReportByEmail from "./getAllLeaveDetails.js";
 import {get_user_info} from "../util/getSlackEmail.js";
 export async function send_leave_details(app, user_id) {
     try {
-        // Get user email
         const email = await get_user_info(user_id);
 
         // Get leave details
@@ -21,11 +20,11 @@ export async function send_leave_details(app, user_id) {
                 fields: [
                     {
                         type: 'mrkdwn',
-                        text: 'Leave Type',
+                        text: '*Leave Type*',
                     },
                     {
                         type: 'mrkdwn',
-                        text: 'Available | Taken',
+                        text: '*Available | Taken*',
                     },
                 ],
             },
@@ -37,7 +36,7 @@ export async function send_leave_details(app, user_id) {
                 fields: [
                     {
                         type: 'mrkdwn',
-                        text: `*${leave_type.leavetypeName}*`,
+                        text: `${leave_type.leavetypeName}`,
                     },
                     {
                         type: 'mrkdwn',
