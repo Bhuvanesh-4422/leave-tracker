@@ -62,6 +62,8 @@ app.command('/apply_leave', async ({ ack, body, client }) => {
             trigger_id: body.trigger_id,
             view: {
                 type: 'modal',
+
+
                 callback_id: 'apply_leave_modal',
                 title: {
                     type: 'plain_text',
