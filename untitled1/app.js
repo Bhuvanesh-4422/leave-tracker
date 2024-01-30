@@ -163,6 +163,7 @@ app.view('apply_leave_modal', async ({ ack, body, view, client }) => {
         await ack();
 
         await new Promise(resolve => setTimeout(resolve, 1000));
+        dayss.options = [];
 
         const from_date = new Date(view.state.values.from_date_section.from_date.selected_date);
         const to_date = new Date(view.state.values.to_date_section.to_date.selected_date);
@@ -244,9 +245,9 @@ app.view('apply_leave_modal', async ({ ack, body, view, client }) => {
                     text: 'Leave Details',
                 },
                 blocks,
-                close: {
+                submit: {
                     type: 'plain_text',
-                    text: 'Close',
+                    text: 'submit',
                 },
             },
         });
@@ -257,6 +258,7 @@ app.view('apply_leave_modal', async ({ ack, body, view, client }) => {
 });
 
 const dayss={'options':[]}
+
 app.action(/leave_option_select_.*/, async ({ ack, body, action, client }) => {
     await ack();
 
@@ -271,13 +273,19 @@ app.action(/leave_option_select_.*/, async ({ ack, body, action, client }) => {
 
     // console.log(dayss)
     leaves_format.days=dayss
-    await inputData(leaves_format)
+
 });
 
-app.action(/action/, async ({ ack, body, action, client }) => {
-    await ack();
-    console.log('action triggered')
-})
+app.view('action', async ({ ack, body, view, client }) => {
+    try {
+        // Acknowledge the view submission
+        await ack();
+
+        await inputData(leaves_format)
+    } catch (error) {
+        console.error('Error handling view submission:', error);
+    }
+});
 
 app.start(3000).then(() => {
     console.log('⚡️ Bolt app is running!');

@@ -18,6 +18,7 @@ async function applyLeave(input_data) {
         const response = await axios.post(url, {}, { headers });
         const data = response.data;
 
+        console.log(data)
     } catch (error) {
         console.error('Error:', error.message);
     }
